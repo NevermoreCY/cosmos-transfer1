@@ -39,6 +39,8 @@ from cosmos_transfer1.utils.lazy_config import instantiate
 CTRL_TYPE_INFO = {
     "keypoint": {"folder": "keypoint", "format": "pickle", "data_dict_key": "keypoint"},
     "depth": {"folder": "depth", "format": "mp4", "data_dict_key": "depth"},
+    "lidar": {"folder": "lidar", "format": "mp4", "data_dict_key": "lidar"},
+    "hdmap": {"folder": "hamap", "format": "mp4", "data_dict_key": "hdmap"},
     "seg": {"folder": "seg", "format": "pickle", "data_dict_key": "segmentation"},
     "edge": {"folder": None},  # Canny edge, computed on-the-fly
     "vis": {"folder": None},   # Blur, computed on-the-fly
@@ -74,7 +76,8 @@ class ExampleTransferDataset(Dataset):
         assert resolution in VIDEO_RES_SIZE_INFO.keys(), "The provided resolution cannot be found in VIDEO_RES_SIZE_INFO."
 
         # Control input setup with file formats
-        self.ctrl_type = hint_key.lstrip("control_input_")
+        self.ctrl_type = hint_key.replace("control_input_", "")
+
         self.ctrl_data_pth_config = CTRL_TYPE_INFO[self.ctrl_type]
 
         # Set up directories - only collect paths
@@ -117,6 +120,7 @@ class ExampleTransferDataset(Dataset):
         data_dict = {}
         frame_ids = sample["frame_ids"]
         ctrl_path = sample["ctrl_path"]
+
         try:
             if self.ctrl_type == "seg":
                 with open(ctrl_path, 'rb') as f:
@@ -141,7 +145,32 @@ class ExampleTransferDataset(Dataset):
                     "frame_start": frame_ids[0],
                     "frame_end": frame_ids[-1],
                 }
-
+            elif self.ctrl_type == "lidar":
+                vr = VideoReader(ctrl_path, ctx=cpu(0))
+                # Ensure the lidar depth video has the same number of frames
+                assert len(vr) >= frame_ids[-1] + 1, \
+                    f"Lidar video {ctrl_path} has fewer frames than main video"
+                # Load the corresponding frames
+                lidar_frames = vr.get_batch(frame_ids).asnumpy() # [T,H,W,C]
+                lidar_frames = torch.from_numpy(lidar_frames).permute(3, 0, 1, 2)  # [C,T,H,W], same as rgb video
+                data_dict["lidar"] = {  
+                    "video": lidar_frames,
+                    "frame_start": frame_ids[0],
+                    "frame_end": frame_ids[-1],
+                }
+            elif self.ctrl_type == "hdmap":
+                vr = VideoReader(ctrl_path, ctx=cpu(0))
+                # Ensure the hdmap video has the same number of frames
+                assert len(vr) >= frame_ids[-1] + 1, \
+                    f"Hdmap video {ctrl_path} has fewer frames than main video"
+                # Load the corresponding frames 
+                hdmap_frames = vr.get_batch(frame_ids).asnumpy() # [T,H,W,C]
+                hdmap_frames = torch.from_numpy(hdmap_frames).permute(3, 0, 1, 2)  # [C,T,H,W], same as rgb video
+                data_dict["hdmap"] = {
+                    "video": hdmap_frames,
+                    "frame_start": frame_ids[0],
+                    "frame_end": frame_ids[-1],
+                }
         except Exception as e:
             warnings.warn(f"Failed to load control data from {ctrl_path}: {str(e)}")
             return None
@@ -189,7 +218,7 @@ class ExampleTransferDataset(Dataset):
                 data["num_frames"] = self.sequence_length
                 data["image_size"] = torch.tensor([704, 1280, 704, 1280]) #.cuda()
                 data["padding_mask"] = torch.zeros(1, 704, 1280) #.cuda()
-                
+              
                 if self.ctrl_type:
                     ctrl_data = self._load_control_data({
                         "ctrl_path": os.path.join(
@@ -199,7 +228,9 @@ class ExampleTransferDataset(Dataset):
                         ) if self.ctrl_data_pth_config["folder"] is not None else None,
                         "frame_ids": frame_ids
                     })
+
                     if ctrl_data is None:  # Control data loading failed
+                        
                         index = np.random.randint(len(self.video_paths))
                         continue
                     data.update(ctrl_data) 
