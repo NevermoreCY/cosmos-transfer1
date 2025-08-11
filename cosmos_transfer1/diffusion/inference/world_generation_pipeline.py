@@ -334,8 +334,14 @@ class DiffusionControl2WorldGenerationPipeline(BaseWorldGenerationPipeline):
         if self.checkpoint_name == "":
             load_network_model(self.model, "")
         else:
+            
+
+            self.checkpoint_name = "nvidia/Cosmos-Transfer1-7B-Sample-AV-Single2MultiView/t2w_base_model.pt"
+
+            print(f"\n\n\nLoading network model from {self.checkpoint_name}\n\n\n")
             load_network_model(self.model, f"{self.checkpoint_dir}/{self.checkpoint_name}")
         if len(self.control_inputs) > 1:
+            print("\n\n\n 1 \n\n\n")
             hint_encoders = torch.nn.ModuleList([])
             for key, spec in self.control_inputs.items():
                 if key in valid_hint_keys:
@@ -352,9 +358,10 @@ class DiffusionControl2WorldGenerationPipeline(BaseWorldGenerationPipeline):
                     torch.cuda.empty_cache()
             self.model.hint_encoders = hint_encoders
         else:
+            print("\n\n\n 2 \n\n\n")
             for _, spec in self.control_inputs.items():
                 log.info(f"Loading ctrl model from ckpt_path: {spec['ckpt_path']}")
-
+                print(f"\n\n\nLoading ctrl model from ckpt_path: {spec['ckpt_path']}\n\n\n")
                 if os.path.exists(spec["ckpt_path"]):
                     net_state_dict = torch.load(spec["ckpt_path"], map_location="cpu", weights_only=False)
                 else:
@@ -882,12 +889,14 @@ class DiffusionControl2WorldMultiviewGenerationPipeline(DiffusionControl2WorldGe
             max_frames=6000,
             also_return_fps=True,
         )
+        print(f"view_condition_video: {view_condition_video}")
+        print(f"fps: {fps}")
         view_condition_video = resize_video(
             view_condition_video, self.height, self.width, interpolation=cv2.INTER_LINEAR
         )
         view_condition_video = torch.from_numpy(view_condition_video)
         total_T = view_condition_video.shape[2]
-
+        print(f"view_condition_video.shape: {view_condition_video.shape}")
         data_batch, state_shape = get_video_batch_for_multiview_model(
             model=self.model,
             prompt_embedding=embedding,
@@ -942,6 +951,7 @@ class DiffusionControl2WorldMultiviewGenerationPipeline(DiffusionControl2WorldGe
         num_new_generated_frames = self.num_video_frames - self.num_input_frames  # 57 - 9 = 48
         B, C, T, H, W = control_input.shape
         T = T // self.model.n_views
+        print(f"T: {T}, total_T: {total_T}")
         assert T == total_T
         # Different from other examples, we use a different logic to determine total generated duration:
         # we check for the maximum number of clips that can be fit in to the duration of ctrl input and condition input

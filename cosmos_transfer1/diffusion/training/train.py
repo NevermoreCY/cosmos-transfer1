@@ -16,7 +16,13 @@
 import argparse
 import importlib
 import os
+import sys
+import traceback
+import warnings
 import time
+
+# 设置内存分配策略
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
 import torch
 import torch.distributed as dist
@@ -30,6 +36,11 @@ from cosmos_transfer1.utils.config_helper import get_config_module, override
 from cosmos_transfer1.utils.lazy_config import instantiate
 from cosmos_transfer1.utils.lazy_config.lazy import LazyConfig
 from cosmos_transfer1.utils.parallel_state_helper import is_tp_cp_pp_rank0
+
+# 清理GPU内存
+if torch.cuda.is_available():
+    torch.cuda.empty_cache()
+    torch.cuda.synchronize()
 
 
 @misc.timer("instantiate model")

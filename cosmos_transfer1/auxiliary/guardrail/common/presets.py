@@ -29,7 +29,7 @@ from cosmos_transfer1.utils import log
 
 def create_text_guardrail_runner(checkpoint_dir: str) -> GuardrailRunner:
     """Create the text guardrail runner."""
-    return GuardrailRunner(safety_models=[Blocklist(checkpoint_dir), LlamaGuard3(checkpoint_dir)])
+    return GuardrailRunner(safety_models=[Blocklist(checkpoint_dir)])
 
 
 def create_video_guardrail_runner(checkpoint_dir: str) -> GuardrailRunner:

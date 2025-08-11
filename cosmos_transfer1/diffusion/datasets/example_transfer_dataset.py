@@ -23,6 +23,7 @@ import pickle
 import traceback
 import warnings
 
+
 import numpy as np
 import torch
 from decord import VideoReader, cpu
@@ -404,15 +405,18 @@ class AVTransferDataset(ExampleTransferDataset):
                     else:
                         video_name_emb = video_name
 
-                    if self.load_mv_emb or view_key == "pinhole_front":
+                    if view_key == "pinhole_front":
                         t5_embedding_path = os.path.join(self.dataset_dir, "t5_xxl", view_key, f"{video_name_emb}.pkl")
                         with open(t5_embedding_path, "rb") as f:
+                            
                             t5_embedding = pickle.load(f)[0]
-                        if self.load_mv_emb:
-                            t5_embedding = np.concatenate([self.prefix_t5_embeddings[view_key], t5_embedding], axis=0)
+                            t5_embedding = np.concatenate([self.prefix_t5_embeddings[view_key][0], t5_embedding], axis=0)
+                        #if self.load_mv_emb:
+                        #    print(t5_embedding.shape, self.prefix_t5_embeddings[view_key][0].shape)
+                        #    t5_embedding = np.concatenate([self.prefix_t5_embeddings[view_key][0], t5_embedding], axis=0)
                     else:
                         # use camera prompt
-                        t5_embedding = self.prefix_t5_embeddings[view_key]
+                        t5_embedding = self.prefix_t5_embeddings[view_key][0]
 
                     t5_embedding = torch.from_numpy(t5_embedding)
                     t5_mask = torch.ones(t5_embedding.shape[0], dtype=torch.int64)
@@ -450,6 +454,18 @@ class AVTransferDataset(ExampleTransferDataset):
                 t5_embedding = torch.cat(t5_embeddings, dim=0)
                 view_indices_conditioning = torch.cat(view_indices_conditioning, dim=0)
 
+                # Create output directory
+                #output_dir = os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "saved_videos")
+                #os.makedirs(output_dir, exist_ok=True)
+                
+                # Save video tensor
+                #video_save_path = os.path.join(output_dir, f"{video_name}_video_tensor.pt")
+                #torch.save(video, video_save_path)
+                #print(f"Video tensor saved to: {video_save_path}")
+                #print(f"Video tensor shape: {video.shape}")
+                #print(f"Video tensor dtype: {video.dtype}")
+                #print(f"Video tensor min/max: {video.min().item():.3f}/{video.max().item():.3f}")
+
                 # Basic data
                 data["video"] = video
                 data["video_name"] = video_name
@@ -471,8 +487,19 @@ class AVTransferDataset(ExampleTransferDataset):
                 # The ctrl_data above is the 'raw' data loaded (e.g. a loaded lidar pkl).
                 # Next, we process it into the control input "video" tensor that the model expects.
                 # This is done in the augmentor.
+                
+                # Save data before augmentation
+                #data_before_aug_path = os.path.join(output_dir, f"{video_name}_before_aug.pt")
+                #torch.save(data, data_before_aug_path)
+                #print(f"Data before augmentation saved to: {data_before_aug_path}")
+                
                 for _, aug_fn in self.augmentor.items():
                     data = aug_fn(data)
+                
+                # Save data after augmentation
+                #data_after_aug_path = os.path.join(output_dir, f"{video_name}_after_aug.pt")
+                #torch.save(data, data_after_aug_path)
+                #print(f"Data after augmentation saved to: {data_after_aug_path}")
 
                 return data
 
@@ -489,23 +516,29 @@ class AVTransferDataset(ExampleTransferDataset):
         return
 
 
+
+
+
 if __name__ == "__main__":
     """
     Sanity check for the dataset.
     """
-    control_input_key = "control_input_lidar"
+    control_input_key = "control_input_hdmap"
     visualize_control_input = True
 
     dataset = AVTransferDataset(
-        dataset_dir="datasets/waymo_transfer1",
-        view_keys=["pinhole_front"],
+        dataset_dir="/lustre/fsw/portfolios/nvr/users/yuch/cosmos/yu_transfer/cosmos-transfer1/datasets/xiaomi_sample_data",
+        view_keys=["pinhole_front", "pinhole_front_left", "pinhole_front_right", "pinhole_side_left", "pinhole_side_right"],
         hint_key=control_input_key,
-        num_frames=121,
+        num_frames=57,
         resolution="720",
         is_train=True,
+        load_mv_emb=True,
+        #sample_n_views=3,
+        caption_view_idx_map={0: 0, 1: 1, 2: 2, 3: 4, 4: 5},
     )
     print("finished init dataset")
-    indices = [0, 12, 100, -1]
+    indices = [0]
     for idx in indices:
         data = dataset[idx]
         print(

@@ -52,7 +52,7 @@ num_blocks = 28
 num_frames = 57
 num_control_blocks = 3
 ckpt_root = "checkpoints/"
-data_root = "datasets/waymo_transfer/"
+data_root = "/lustre/fsw/portfolios/nvr/users/yuch/cosmos/yu_transfer/cosmos-transfer1/datasets/xiaomi_sample_data"
 
 t2w_mv_model_names = {
     "hdmap": SV2MV_t2w_HDMAP2WORLD_CONTROLNET_7B_CHECKPOINT_PATH,
@@ -116,7 +116,7 @@ def make_ctrlnet_config(
             "pinhole_side_right",
         ],
         caption_view_idx_map={0: 0, 1: 1, 2: 2, 3: 4, 4: 5},
-        sample_n_views=3,
+        sample_n_views=2,
         load_mv_emb=False,
         is_train=True,
     )
@@ -165,7 +165,7 @@ def make_ctrlnet_config(
             ),
             model=dict(
                 fsdp_enabled=False,
-                n_views=3,
+                n_views=2,
                 context_parallel_size=1,
                 loss_reduce="mean",
                 latent_shape=[
@@ -194,7 +194,7 @@ def make_ctrlnet_config(
                 ),
                 net=L(VideoExtendGeneralDIT)(
                     in_channels=17,
-                    n_views=3,
+                    n_views=2,
                     n_views_emb=7,
                     view_condition_dim=6,
                     add_repeat_frame_embedding=True,
@@ -208,7 +208,7 @@ def make_ctrlnet_config(
                     in_channels=16,  # + 1 for cond_mask, +1 for padding mask, +6 for cam
                     hint_channels=16,
                     num_blocks=num_blocks,
-                    n_views=3,
+                    n_views=2,
                     n_views_emb=7,
                     view_condition_dim=6,
                     add_repeat_frame_embedding=True,
