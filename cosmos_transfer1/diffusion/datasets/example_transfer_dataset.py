@@ -320,10 +320,10 @@ class AVTransferDataset(ExampleTransferDataset):
         self.t5_dir = os.path.join(self.dataset_dir, "t5_xxl")
 
         cache_dir = os.path.join(self.dataset_dir, "cache")
-        self.prefix_t5_embeddings = {}
-        for view_key in view_keys:
-            with open(os.path.join(cache_dir, f"prefix_{view_key}.pkl"), "rb") as f:
-                self.prefix_t5_embeddings[view_key] = pickle.load(f)
+        #self.prefix_t5_embeddings = {}
+        #for view_key in view_keys:
+        #    with open(os.path.join(cache_dir, f"prefix_{view_key}.pkl"), "rb") as f:
+        #        self.prefix_t5_embeddings[view_key] = pickle.load(f)
         if caption_view_idx_map is None:
             self.caption_view_idx_map = dict([(i, i) for i in range(len(self.view_keys))])
         else:
@@ -405,18 +405,23 @@ class AVTransferDataset(ExampleTransferDataset):
                     else:
                         video_name_emb = video_name
 
-                    if view_key == "pinhole_front":
-                        t5_embedding_path = os.path.join(self.dataset_dir, "t5_xxl", view_key, f"{video_name_emb}.pkl")
-                        with open(t5_embedding_path, "rb") as f:
-                            
-                            t5_embedding = pickle.load(f)[0]
-                            t5_embedding = np.concatenate([self.prefix_t5_embeddings[view_key][0], t5_embedding], axis=0)
-                        #if self.load_mv_emb:
-                        #    print(t5_embedding.shape, self.prefix_t5_embeddings[view_key][0].shape)
-                        #    t5_embedding = np.concatenate([self.prefix_t5_embeddings[view_key][0], t5_embedding], axis=0)
-                    else:
-                        # use camera prompt
-                        t5_embedding = self.prefix_t5_embeddings[view_key][0]
+
+                    t5_embedding_path = os.path.join(self.dataset_dir, "t5_xxl", view_key, f"{video_name_emb}.pkl")
+                    with open(t5_embedding_path, "rb") as f:
+                        t5_embedding = pickle.load(f)[0]
+
+                    #if view_key == "pinhole_front":
+                    #    t5_embedding_path = os.path.join(self.dataset_dir, "t5_xxl", view_key, f"{video_name_emb}.pkl")
+                    #    with open(t5_embedding_path, "rb") as f:
+                    #    
+                    #        t5_embedding = pickle.load(f)[0]
+                    #        t5_embedding = np.concatenate([self.prefix_t5_embeddings[view_key][0], t5_embedding], axis=0)
+                    #    #if self.load_mv_emb:
+                    #    #    print(t5_embedding.shape, self.prefix_t5_embeddings[view_key][0].shape)
+                    #    #    t5_embedding = np.concatenate([self.prefix_t5_embeddings[view_key][0], t5_embedding], axis=0)
+                    #else:
+                    #    # use camera prompt
+                    #    t5_embedding = self.prefix_t5_embeddings[view_key][0]
 
                     t5_embedding = torch.from_numpy(t5_embedding)
                     t5_mask = torch.ones(t5_embedding.shape[0], dtype=torch.int64)
@@ -527,15 +532,15 @@ if __name__ == "__main__":
     visualize_control_input = True
 
     dataset = AVTransferDataset(
-        dataset_dir="/lustre/fsw/portfolios/nvr/users/yuch/cosmos/yu_transfer/cosmos-transfer1/datasets/xiaomi_sample_data",
-        view_keys=["pinhole_front", "pinhole_front_left", "pinhole_front_right", "pinhole_side_left", "pinhole_side_right"],
+        dataset_dir="/lustre/fsw/portfolios/nvr/users/yuch/cosmos/yu_transfer/cosmos-transfer1/datasets/xiaomi_sample_data_7views",
+        view_keys=["pinhole_front", "pinhole_front_left", "pinhole_front_right", "pinhole_rear", "pinhole_side_left", "pinhole_side_right","pinhole_front_tele"],
         hint_key=control_input_key,
         num_frames=57,
         resolution="720",
         is_train=True,
         load_mv_emb=True,
         #sample_n_views=3,
-        caption_view_idx_map={0: 0, 1: 1, 2: 2, 3: 4, 4: 5},
+        caption_view_idx_map={0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6:6},
     )
     print("finished init dataset")
     indices = [0]

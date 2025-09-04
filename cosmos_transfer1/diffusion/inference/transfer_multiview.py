@@ -118,13 +118,13 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         "--prompt_left",
         type=str,
-        default="The video is captured from a camera mounted on a car. The camera is facing to the left. ",
+        default="The video is captured from a camera mounted on a car. The camera is facing to the front left. ",
         help="Text prompt for generating left camera view video",
     )
     parser.add_argument(
         "--prompt_right",
         type=str,
-        default="The video is captured from a camera mounted on a car. The camera is facing to the right.",
+        default="The video is captured from a camera mounted on a car. The camera is facing to the front right.",
         help="Text prompt for generating right camera view video",
     )
 
@@ -146,6 +146,21 @@ def parse_arguments() -> argparse.Namespace:
         default="The video is captured from a camera mounted on a car. The camera is facing the rear right side.",
         help="Text prompt for generating right camera view video",
     )
+
+    parser.add_argument(
+        "--prompt_back_right",
+        type=str,
+        default="The video is captured from a camera mounted on a car. The camera is facing the rear right side.",
+        help="Text prompt for generating right camera view video",
+    )
+
+    parser.add_argument(
+        "--prompt_front_tele",
+        type=str,
+        default="The video is captured from a telephoto camera mounted on a car. The camera is facing forward.",
+        help="Text prompt for generating front telephoto camera view video",
+    )
+
     parser.add_argument(
         "--view_condition_video",
         type=str,
@@ -341,14 +356,28 @@ def demo(cfg, control_inputs):
 
     preprocessors = Preprocessors()
 
+    n_views = 7
+
     if cfg.waymo_example:
+        #prompts = [
+        #    cfg.prompt,
+        #    cfg.prompt_left,
+        #    cfg.prompt_right,
+        #    cfg.prompt_back_left,
+        #    cfg.prompt_back_right,
+        #]
+
+
         prompts = [
-            cfg.prompt,
-            cfg.prompt_left,
-            cfg.prompt_right,
-            cfg.prompt_back_left,
-            cfg.prompt_back_right,
-        ]
+                cfg.prompt,
+                cfg.prompt_left,
+                cfg.prompt_right,
+                cfg.prompt_back,
+                cfg.prompt_back_left,
+                cfg.prompt_back_right,
+                cfg.prompt_front_tele,
+            ]
+        
         if cfg.initial_condition_video:
             cfg.is_lvg_model = True
             checkpoint = SV2MV_v2w_HDMAP2WORLD_CONTROLNET_7B_WAYMO_CHECKPOINT_PATH
@@ -358,14 +387,15 @@ def demo(cfg, control_inputs):
             checkpoint = SV2MV_t2w_HDMAP2WORLD_CONTROLNET_7B_WAYMO_CHECKPOINT_PATH
 
     else:
+
         prompts = [
-            cfg.prompt,
-            cfg.prompt_left,
-            cfg.prompt_right,
-            cfg.prompt_back,
-            cfg.prompt_back_left,
-            cfg.prompt_back_right,
-        ]
+                cfg.prompt,
+                cfg.prompt_left,
+                cfg.prompt_right,
+                cfg.prompt_back,
+                cfg.prompt_back_left,
+                cfg.prompt_back_right,
+            ]
 
         if cfg.initial_condition_video:
             cfg.is_lvg_model = True

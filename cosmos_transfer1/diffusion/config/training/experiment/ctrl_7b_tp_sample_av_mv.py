@@ -52,7 +52,7 @@ num_blocks = 28
 num_frames = 57
 num_control_blocks = 3
 ckpt_root = "checkpoints/"
-data_root = "/lustre/fsw/portfolios/nvr/users/yuch/cosmos/yu_transfer/cosmos-transfer1/datasets/xiaomi_sample_data"
+data_root = "/lustre/fsw/portfolios/nvr/users/yuch/cosmos/yu_transfer/cosmos-transfer1/datasets/xiaomi_sample_data_7views"
 
 t2w_mv_model_names = {
     "hdmap": SV2MV_t2w_HDMAP2WORLD_CONTROLNET_7B_CHECKPOINT_PATH,
@@ -108,14 +108,14 @@ def make_ctrlnet_config(
         num_frames=num_frames,
         hint_key=hint_key,
         resolution="720",
-        view_keys=[
-            "pinhole_front",
-            "pinhole_front_left",
-            "pinhole_front_right",
-            "pinhole_side_left",
-            "pinhole_side_right",
-        ],
-        caption_view_idx_map={0: 0, 1: 1, 2: 2, 3: 4, 4: 5},
+        view_keys=["pinhole_front", 
+                   "pinhole_front_left", 
+                   "pinhole_front_right", 
+                   "pinhole_rear", 
+                   "pinhole_side_left", 
+                   "pinhole_side_right",
+                   "pinhole_front_tele"],
+        caption_view_idx_map={0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6:6},
         sample_n_views=2,
         load_mv_emb=False,
         is_train=True,

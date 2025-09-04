@@ -235,7 +235,7 @@ def make_ctrlnet_config_7b_mv_waymo(
                 project="cosmos_ctrlnet1",
             ),
             model=dict(
-                n_views=5,
+                n_views=7,
                 base_load_from=dict(
                     load_path=f"checkpoints/{BASE_t2w_7B_SV2MV_CHECKPOINT_AV_SAMPLE_PATH}"
                     if t2w
@@ -258,7 +258,7 @@ def make_ctrlnet_config_7b_mv_waymo(
                     )
                 ),
                 net=L(MultiViewVideoExtendGeneralDIT)(
-                    n_views=5,
+                    n_views=7,
                     n_views_emb=7,
                     camera_condition_dim=6,
                     add_repeat_frame_embedding=True,
@@ -272,7 +272,7 @@ def make_ctrlnet_config_7b_mv_waymo(
                     in_channels=16,
                     hint_channels=16,
                     num_blocks=28,
-                    n_views=5,
+                    n_views=7,
                     n_views_emb=7,
                     camera_condition_dim=6,
                     add_repeat_frame_embedding=True,

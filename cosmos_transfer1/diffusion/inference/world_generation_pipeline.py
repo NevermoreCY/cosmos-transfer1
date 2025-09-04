@@ -804,17 +804,20 @@ class DiffusionControl2WorldMultiviewGenerationPipeline(DiffusionControl2WorldGe
             video_arrangement = [1, 0, 2, 3, 0, 4]
         elif self.model.n_views == 6:
             video_arrangement = [1, 0, 2, 4, 3, 5]
+        elif self.model.n_views == 7:
+            video_arrangement = [1, 0, 2, 4, 3, 5, 6]
         else:
             raise ValueError(f"Unsupported number of views: {self.model.n_views}")
         # Decode video
         video = (1.0 + self.model.decode(sample)).clamp(0, 2) / 2  # [B, 3, T, H, W]
         video_segments = einops.rearrange(video, "b c (v t) h w -> b c v t h w", v=self.model.n_views)
-        grid_video = torch.stack(
-            [video_segments[:, :, i] for i in video_arrangement],
-            dim=2,
-        )
-        grid_video = einops.rearrange(grid_video, "b c (h w) t h1 w1 -> b c t (h h1) (w w1)", h=2, w=3)
-        grid_video = (grid_video[0].permute(1, 2, 3, 0) * 255).to(torch.uint8).cpu().numpy()
+        #grid_video = torch.stack(
+        #    [video_segments[:, :, i] for i in video_arrangement],
+        #    dim=2,
+        #)
+        #grid_video = einops.rearrange(grid_video, "b c (h w) t h1 w1 -> b c t (h h1) (w w1)", h=2, w=3)
+        #grid_video = (grid_video[0].permute(1, 2, 3, 0) * 255).to(torch.uint8).cpu().numpy()
+        grid_video = None
         video = (video[0].permute(1, 2, 3, 0) * 255).to(torch.uint8).cpu().numpy()
 
         return [grid_video, video]
@@ -917,7 +920,7 @@ class DiffusionControl2WorldMultiviewGenerationPipeline(DiffusionControl2WorldGe
                     if fname.endswith(".mp4"):
                         try:
                             input_view_id = int(fname.split(".")[0])
-                        except ValueError:
+                        except ValueError:  
                             log.warning(f"Could not parse video file name {fname} into view id")
                             continue
                         initial_condition_video_n = read_video_or_image_into_frames_BCTHW(
@@ -1167,6 +1170,16 @@ class DiffusionControl2WorldMultiviewGenerationPipeline(DiffusionControl2WorldGe
                 "The video is captured from a camera mounted on a car. The camera is facing backwards.",
                 "The video is captured from a camera mounted on a car. The camera is facing the rear left side.",
                 "The video is captured from a camera mounted on a car. The camera is facing the rear right side.",
+            ]
+        elif n_views == 7:
+            base_prompts = [
+                "The video is captured from a camera mounted on a car. The camera is facing forward.",
+                "The video is captured from a camera mounted on a car. The camera is facing to the front left.",
+                "The video is captured from a camera mounted on a car. The camera is facing to the front right.",
+                "The video is captured from a camera mounted on a car. The camera is facing backwards.",
+                "The video is captured from a camera mounted on a car. The camera is facing the rear left side.",
+                "The video is captured from a camera mounted on a car. The camera is facing the rear right side.",
+                "The video is captured from a telephoto camera mounted on a car. The camera is facing forward.",
             ]
 
         log.info(f"Reading multiview prompts, found {len(mv_prompts)} splits")
